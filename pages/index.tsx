@@ -6,12 +6,15 @@ import ReactMarkdown from 'react-markdown'
 import { ListObjectsCommand, GetObjectCommand } from "@aws-sdk/client-s3"; 
 import { s3Client } from '../apis/s3Client'
 
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { docco } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+
 export async function getServerSideProps() {
   let markdownContent;
   
   const bucketParams = {
     Bucket: 'portfolio-page-bucket',
-    Key: 'intro-to-git.md',
+    Key: 'foundations-js.md',
   };
 
   const run = async () => {
@@ -50,6 +53,7 @@ export async function getServerSideProps() {
 const Home: NextPage = (props) => {
   console.log('props: ', props);
   const { markdownContent } = props;
+  const codeString = '(num) => num + 1';
   
   return (
     <div className={styles.container}>
@@ -60,11 +64,35 @@ const Home: NextPage = (props) => {
       </Head>
 
       <main className={styles.main}>
+        <SyntaxHighlighter language="javascript" style={docco}>
+          {codeString}
+        </SyntaxHighlighter>
         <h1 className={styles.title}>
           Welcome to <a href="https://nextjs.org">Next.js!</a>
         </h1>
 
-        <ReactMarkdown>
+        <ReactMarkdown
+          components={{
+            code({ children, inline, className, ...props }) {
+              let match = /language-(\w+)/.exec(className || '')
+              const markdownToSyntaxHighlighterMapping = {
+                js: 'javascript',
+              }
+
+              match = match ? match[1] : '';
+              const language = match ? markdownToSyntaxHighlighterMapping[match] : match;
+              console.log('match: ', match);
+              return !inline && match ? (
+                <SyntaxHighlighter language={language} style={docco}>
+                  {children}
+                </SyntaxHighlighter>
+              ) : (
+                <code className={className} {...props}>
+                  {children}  
+                </code>
+              )
+            }
+          }}>
           { markdownContent }
         </ReactMarkdown>
       </main>
